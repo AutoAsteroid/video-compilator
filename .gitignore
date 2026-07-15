@@ -1,2 +1,6 @@
+# System repository files
 !.gitkeep
+node_modules/
+
+# Junk MacOS files
 .DS_Store
