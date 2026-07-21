@@ -2,16 +2,17 @@ import fs from "fs";
 import path from "path";
 import ffmpeg from "fluent-ffmpeg";
 import pc from "picocolors";
+import { fileTypeFromFile } from "file-type";
+import { fisherYatesShuffle, probeFile } from "./utils";
 
 export default class VideoPipeline {
     /**
      * Class representation pipeline used to orchestrate the full fmmpeg video compilation process.
-     * @param {string} inputDirectory The input folder including the video and/or image files to join.
-     * @param {string} outputName The output video file name to place in the output folder
+     * @param {string} inputDirectory The input folder that has the video and/or image files to join.
      */
-    constructor(inputDirectory, outputName) {
-        this.inputDir = inputDir;
-		this.outputName = outputName;
+    constructor(inputDirectory) {
+        // Remove any trailing whitespace and single/double quotes
+        this.inputDirectory = inputDirectory.trim().replace(/^['"]|['"]$/g, "");
 		this.assets = [];
 		this.tempDirectory = "./normalized";
     }
@@ -65,7 +66,41 @@ export default class VideoPipeline {
      * @returns {void} Appends objects representing input file meta data into this.assets
      */
     async scanFiles(spinner) {
+        if (!fs.existsSync(this.inputDirectory)) return; 
 
+        for (const entry of fs.readdirSync(this.inputDirectory)) {
+            const fullPath = path.join(this.inputDirectory, entry);
+            const fileStat = fs.statSync(fullPath);
+
+            if (fileStat.isDirectory()) {
+                await this.scanFiles(spinner);
+                continue;
+            }
+
+            spinner.message(`Scanning: ${entry}`);
+
+            // Skip non media files or files that ffmpeg does not know how to read
+            const meta = await probeFile(fullPath);
+            if (!meta || !meta.streams || meta.streams.length === 0) continue;
+
+            // Make sure that the file is non audio and actually a visual file
+            const videoStream = meta.streams.find((s) => s.codec_type === "video");
+            if (!videoStream) continue;
+
+            const isImage = [ "mjpeg", "png", "bmp", "webp" ].includes(videoStream.codec_name);
+            const duration = meta.format?.duration ? parseFloat(meta.format.duration) : 0;
+
+            this.assets.push({
+                path: fullPath,
+                name: entry,
+                size: fileStat.size,
+                birthTime: fileStat.birthtimeMs,
+                image: isImage,
+                duration: duration,
+                width: videoStream.width || 0,
+                height: videoStream.height || 0,
+            });
+        }
     }
 
     /**
@@ -74,7 +109,25 @@ export default class VideoPipeline {
      * @returns {Array<Object>} Returns the sorted this.assets array of objects
      */
     sortFiles(method) {
+        // Randomly shuffle this.assets in place and return this.assets
+        if (method === "RANDOM") {
+            return fisherYatesShuffle(this.assets);
+        }
 
+        // Hard coded sort methods to join the output video compilation by
+        const sortMethods = {
+            ALPHABETICAL_ASC: (a, b) => a.name.localeCompare(b.name),
+            ALPHABETICAL_DESC: (a, b) => b.name.localeCompare(a.name),
+            DATE_ASC: (a, b) => a.birthTime - b.birthTime,
+            DATE_DESC: (a, b) => b.birthTime - a.birthTime,
+            DURATION_ASC: (a, b) => a.duration - b.duration,
+            DURATION_DESC: (a, b) => b.duration - a.duration,
+            SIZE_ASC: (a, b) => a.size - b.size,
+            SIZE_DESC: (a, b) => b.size - a.size,
+            TYPE_ASC: (a, b) => a.extension - b.extension,
+            TYPE_DESC: (a, b) => b.extension - a.extension,
+        };
+        return this.assets.sort(sortMethods[method]);
     }
     
     /**
@@ -88,9 +141,10 @@ export default class VideoPipeline {
     /**
      * Stitches the normalized video files together into a final output video using -c copy flag
      * ffmpeg -c copy copies the bits directly and does not need to re-encode the video if used
+     * @param {string} outputName The output video file name to place in the output folder
      * @param {import("@clack/prompts").spinner} spinner Clack spinner to show progress over time
      */
-    async stitchFiles(spinner) {
+    async stitchFiles(outputName, spinner) {
 
     }
 }
