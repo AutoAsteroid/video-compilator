@@ -2,8 +2,8 @@ import fs from "fs";
 import path from "path";
 import ffmpeg from "fluent-ffmpeg";
 import pc from "picocolors";
-import { fileTypeFromFile } from "file-type";
-import { fisherYatesShuffle, probeFile } from "./utils.js";
+import Asset from "./asset.js";
+import { fisherYatesShuffle } from "./utils.js";
 
 export default class VideoPipeline {
     /**
@@ -69,57 +69,29 @@ export default class VideoPipeline {
     async scanFiles(progress, directory = this.inputDirectory) {
         if (!fs.existsSync(directory)) return; 
 
+        // Expand total task count dynamically as new file entries are found
         const entries = fs.readdirSync(directory);
-
-        // Expand total task count dynamically as entries are found
         progress.addTotalTasks(entries.length);
 
         for (const entry of entries) {
             const fullPath = path.join(directory, entry);
             const fileStat = fs.statSync(fullPath);
 
-            // Handle Subdirectories recursively
+            // Handle any subdirectories recursively
             if (fileStat.isDirectory()) {
                 await this.scanFiles(progress, fullPath);
-                // Mark the directory entry itself as complete so totalTask math stays balanced
                 progress.completeTask(entry);
                 continue;
             }
 
-            // Show current file being probed without incrementing completion count yet
-            progress.setMessage(entry, false);
+            // Process the current file entry asset metadata
+            progress.setMessage(entry);
+            const asset = new Asset(fullPath);
+            await asset.analyze();
 
-            // Probe file metadata with FFmpeg
-            const meta = await probeFile(fullPath);
-            
-            // Skip non-media or unreadable files
-            if (!meta || !meta.streams || meta.streams.length === 0) {
-                progress.completeTask(entry);
-                continue;
-            }
+            if (asset.isValidMedia) 
+                this.assets.push(asset);
 
-            // Ensure file contains a visual video/image stream
-            const videoStream = meta.streams.find((s) => s.codec_type === "video");
-            if (!videoStream) {
-                progress.completeTask(entry);
-                continue;
-            }
-
-            const isImage = ["mjpeg", "png", "bmp", "webp"].includes(videoStream.codec_name);
-            const duration = meta.format?.duration ? parseFloat(meta.format.duration) : 0;
-
-            this.assets.push({
-                path: fullPath,
-                name: entry,
-                size: fileStat.size,
-                birthTime: fileStat.birthtimeMs,
-                image: isImage,
-                duration: duration,
-                width: videoStream.width || 0,
-                height: videoStream.height || 0,
-            });
-
-            // Mark file scan as complete (locks in green segment)
             progress.completeTask(entry);
         }
     }

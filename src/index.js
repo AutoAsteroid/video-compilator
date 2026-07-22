@@ -32,9 +32,10 @@ await pipeline.scanFiles(scanProgress);
 scanProgress.stop();
 
 if (pipeline.assets.length === 0) {
-    scanSpinner.stop("No matching video files found!");
     outro(pc.red("Please make sure you passed a valid file path."));
 }
+
+console.log(pipeline.assets)
 
 // const outputName = await text({
 //     message: "What should the merged file be named?",

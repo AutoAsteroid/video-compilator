@@ -18,7 +18,6 @@ export default class Asset {
         this.birthTime = 0;
         this.isImage = false;
         this.duration = 0;
-        this.extension = "";
         this.width = 0;
         this.height = 0;
         this.isValidMedia = false;
@@ -31,11 +30,7 @@ export default class Asset {
     async analyze() {
         if (!fs.existsSync(this.path)) return this;
 
-        // Populate the file size and creation date from fs.statSync
-        const stat = fs.statSync(this.path);
-        this.size = stat.size;
-        this.birthTime = stat.birthtimeMs;
-
+        // Use file-type package to efficiently distinguish the input file type
         const fileType = await fileTypeFromFile(this.path);
         if (fileType === undefined) return this;
 
@@ -59,16 +54,15 @@ export default class Asset {
                 }
             } catch {}
         }
-        // This same instance but now with populated metadata
-        return this;
-    }
 
-    /**
-     * Returns the resolution of this asset. "0x0" if the asset is invalid media
-     * @returns {string} Returns a string formatted resolution, e.g.: "1920x1080"
-     */
-    get resolution() {
-        return this.width + "x" + this.height;
+        // Populate the file size and creation date from fs.statSync and resolution
+        const stat = fs.statSync(this.path);
+        this.size = stat.size;
+        this.birthTime = stat.birthtimeMs;
+        this.resolution = this.width + "x" + this.height;
+
+        // This same instance but now with the populated metadata
+        return this;
     }
 
     /**
