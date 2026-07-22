@@ -64,6 +64,14 @@ export default class Asset {
     }
 
     /**
+     * Returns the resolution of this asset. "0x0" if the asset is invalid media
+     * @returns {string} Returns a string formatted resolution, e.g.: "1920x1080"
+     */
+    get resolution() {
+        return this.width + "x" + this.height;
+    }
+
+    /**
      * This asset is considered to be a video if it is valid and not an image
      * @returns {Boolean} Returns whether or not this asset is a video
      */
