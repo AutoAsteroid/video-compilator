@@ -30,7 +30,7 @@ export default class VideoPipeline {
 
     /**
      * Sets the output target frame rate that files will all have to be normalized to match
-     * @param {number} frameRate Positive integer representing frames per second
+     * @returns {string} Raw fraction frame rate string representation for FFmpeg (e.g. "30000/1001")
      */
     setFrameRate(frameRate) {
         this.targetFPS = frameRate;
@@ -66,7 +66,7 @@ export default class VideoPipeline {
         for (const [ resolution, totalWeight ] of Object.entries(weights)) {
             if (totalWeight > maxWeight) {
                 maxWeight = totalWeight;
-                topResolution = res;
+                topResolution = resolution;
             }
         }
         return topResolution;
