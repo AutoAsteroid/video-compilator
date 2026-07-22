@@ -12,6 +12,16 @@ function cancel(message) {
 }
 
 /**
+ * Helper function wrapping a @clack/prompts promise to handle cancellation globally
+ */
+async function ask(prompt) {
+    const result = await prompt;
+    if (isCancel(result))
+        cancel("Operation cancelled. Exiting.");
+    else return result;
+}
+
+/**
  * ffmpeg CLI wrapper to join video and image files into a single video compilation.
  * Supports smart export defaults, join ordering, progress bars, and normalization.
  */
@@ -19,11 +29,10 @@ function cancel(message) {
 async function main() {
     intro(pc.bold(pc.cyan("Welcome to Video-Compilator! @ github.com/AutoAsteroid")));
 
-    const folder = await text({
+    const folder = await ask(text({
         message: "Where are your image and video files located?",
         placeholder: "Relative or absolute path to folder..."
-    });
-    if (isCancel(folder)) return cancel("Operation cancelled. Exiting.");
+    }));
 
     const pipeline = new VideoPipeline(folder);
     const scanProgress = new ProgressBar("Scanning");
@@ -34,6 +43,19 @@ async function main() {
 
     if (pipeline.assets.length === 0)
         return cancel("Could not find any media files at the provided path.");
+
+    // Set the length each output image should be at if we detected any image assets
+    if (pipeline.assets.some(asset => asset.isImage)) {
+        const durationInput = await ask(text({
+            message: "How many seconds should each image be displayed?",
+            validate: (value) => {
+                const input = parseFloat(value);
+                if (isNaN(input) || input <= 0)
+                    return "Enter a valid duration in seconds (e.g., 3 or 2.5).";
+            }
+        }));
+        pipeline.setImageLength(parseFloat(durationInput));
+    }
 }
 
 // Execute the main command line interface video pipeline with global error catching
