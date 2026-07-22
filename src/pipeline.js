@@ -77,15 +77,14 @@ export default class VideoPipeline {
             const fullPath = path.join(directory, entry);
             const fileStat = fs.statSync(fullPath);
 
-            // Handle any subdirectories recursively
+            // Handle any sub folders recursively depth first
             if (fileStat.isDirectory()) {
                 await this.scanFiles(progress, fullPath);
-                progress.completeTask(entry);
                 continue;
             }
 
             // Process the current file entry asset metadata
-            progress.setMessage(entry);
+            progress.setMessage(entry, false);
             const asset = new Asset(fullPath);
             await asset.analyze();
 
