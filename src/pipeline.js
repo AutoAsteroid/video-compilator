@@ -74,28 +74,28 @@ export default class VideoPipeline {
 
     /**
      * Returns a dynamic frame rate of the most common input frame rate to limit normalization needed
-     * @returns {number} Positive integer representing most frequent frames per second of video
+     * @returns {string} Raw fraction frame rate string representation for FFmpeg (e.g. "30000/1001")
      */
     getSmartFrameRate() {
-        if (!this.assets || this.assets.length === 0) return 5;
+        if (!this.assets || this.assets.length === 0) return "30/1";
 
         const weights = {};
-        for (const { duration, fps, isImage } of this.assets) {
+        for (const { duration, rawFPS, isImage } of this.assets) {
             // Skip images entirely as they adopt whatever FPS the output video uses
-            if (isImage || !fps || fps <= 0) continue;
+            if (isImage || !rawFPS || rawFPS === "0/0") continue;
 
-            weights[fps] ??= 0;
-            weights[fps] += duration;
+            weights[rawFPS] ??= 0;
+            weights[rawFPS] += duration;
         }
 
         // Smart frame rate is the most common. We want to skip normalizing these
-        let topFrameRate = 30;
+        let topFrameRate = "30/1";
         let maxWeight = -1;
 
-        for (const [ fps, totalWeight ] of Object.entries(weights)) {
+        for (const [ rawFPS, totalWeight ] of Object.entries(weights)) {
             if (totalWeight > maxWeight) {
                 maxWeight = totalWeight;
-                topFrameRate = fps;
+                topFrameRate = rawFPS;
             }
         }
         return topFrameRate;
