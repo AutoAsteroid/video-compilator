@@ -49,7 +49,27 @@ export default class VideoPipeline {
      * @returns {string} Resolution string formatted as #x#, e.g. "1920x1080", "3840x2160"
      */
     getSmartResolution() {
+        if (!this.assets || this.assets.length === 0) return "1920x1080";
 
+        const weights = {}; // { "1920x1080": duration }
+        for (const { duration, resolution, isImage } of this.assets) {
+            // Looping images are weighted at only 15% the computational effort to encode
+            const weight = isImage ? this.imageLength * 0.15 : duration;
+            weights[resolution] ??= 0;
+            weights[resolution] += weight;
+        }
+
+        // Smart resolution is the most common. We want to skip normalizing these
+        let topResolution = "1920x1080";
+        let maxWeight = -1;
+
+        for (const [ resolution, totalWeight ] of Object.entries(weights)) {
+            if (totalWeight > maxWeight) {
+                maxWeight = totalWeight;
+                topResolution = res;
+            }
+        }
+        return topResolution;
     }
 
     /**
@@ -57,7 +77,28 @@ export default class VideoPipeline {
      * @returns {number} Positive integer representing most frequent frames per second of video
      */
     getSmartFrameRate() {
+        if (!this.assets || this.assets.length === 0) return 5;
 
+        const weights = {};
+        for (const { duration, fps, isImage } of this.assets) {
+            // Skip images entirely as they adopt whatever FPS the output video uses
+            if (isImage || !fps || fps <= 0) continue;
+
+            weights[fps] ??= 0;
+            weights[fps] += duration;
+        }
+
+        // Smart frame rate is the most common. We want to skip normalizing these
+        let topFrameRate = 30;
+        let maxWeight = -1;
+
+        for (const [ fps, totalWeight ] of Object.entries(weights)) {
+            if (totalWeight > maxWeight) {
+                maxWeight = totalWeight;
+                topFrameRate = fps;
+            }
+        }
+        return topFrameRate;
     }
 
     /**

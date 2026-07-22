@@ -58,6 +58,7 @@ export async function videoInfo(filePath) {
         height: videoStream.height || 0,
 
         // Video performance and playback properties
+        rawFPS: videoStream.r_frame_rate || videoStream.avg_frame_rate,
         fps: parseFPS(videoStream.r_frame_rate || videoStream.avg_frame_rate),
         duration: parseFloat(meta.format?.duration || videoStream.duration) || 0,
         bitrate: parseInt(meta.format?.bit_rate || videoStream.bit_rate || 0, 10),
