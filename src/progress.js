@@ -65,7 +65,7 @@ export default class ProgressBar {
      * @param {number} percent Percentage complete for current task progress bar
      * @param {string} [detail=""] Message detail to place at the end of the progress bar
      */
-    updateTask(percent, detail = "") {
+    updateTask(percent = 0, detail = "") {
         if (detail) this.detail = detail;
 
         this.currentTaskProgress = Math.min(100, Math.max(0, percent));
@@ -124,17 +124,8 @@ export default class ProgressBar {
      * @returns {string} Progress bar message to be passed into the clack spinner message
      */
     buildMessage() {
-        // Simple progress meter with completed task increment with no progress bar
-        if (this.totalTasks === 0) {
-            const count = pc.dim("(" + this.completedTasks + ")");
-            const detail = pc.dim(this.detail);
-            return `${pc.bold(this.title)} ${count}: ${detail}`;
-        }
-
         // Multi progress bar when we have total tasks to be able to represent progress
         const overallRatio = this.getOverallRatio();
-        const overallPercent = Math.round(overallRatio * 100);
-
         const totalFilled = Math.round(overallRatio * this.barLength);
         const completed = Math.floor((this.completedTasks / this.totalTasks) * this.barLength);
         const active = Math.max(0, totalFilled - completed);
@@ -145,12 +136,14 @@ export default class ProgressBar {
         const cyanBlock = pc.cyan("█".repeat(active));
         const grayBlock = pc.gray("░".repeat(empty));
 
+        // If totalTasks = 0, the output bar will just be a non progressing bar
         const progressBar = `[${greenBlock}${cyanBlock}${grayBlock}]`;
-        const counter = pc.dim(`(${this.completedTasks}/${this.totalTasks})`);
+        const percent = pc.green(Math.round(overallRatio * 100) + "%");
+        const counter = pc.green(`(${this.completedTasks}/${this.totalTasks})`);
         const eta = pc.yellow(`ETA: ${this.eta}`);
-        const detail = this.detail ? ` ${pc.dim(this.detail)}` : "";
+        const detail = this.detail ? `\n   ${pc.dim(this.detail)}`: "";
 
-        return `${pc.bold(this.title)} ${progressBar} ${overallPercent}% ${counter} ${eta}${detail}`;
+        return `${this.title} ${progressBar} ${percent} ${counter} ${eta}${detail}`;
     }
 
     /**
