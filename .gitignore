@@ -1,4 +1,5 @@
 # System repository files
+output/*
 !.gitkeep
 node_modules/
 

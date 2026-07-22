@@ -3,17 +3,13 @@ import pc from "picocolors";
 import VideoPipeline from "./pipeline.js";
 import ProgressBar from "./progress.js";
 
-/**
- * Helper function called to safely stop the command line interface and video pipeline
- */
+// Helper function called to safely stop the command line interface and video pipeline
 function cancel(message) {
     outro(pc.red(message));
     process.exit();
 }
 
-/**
- * Helper function wrapping a @clack/prompts promise to handle cancellation globally
- */
+// Helper function wrapping a @clack/prompts promise to handle cancellation globally
 async function ask(prompt) {
     const result = await prompt;
     if (isCancel(result))
@@ -29,6 +25,7 @@ async function ask(prompt) {
 async function main() {
     intro(pc.bold(pc.cyan("Welcome to Video-Compilator! @ github.com/AutoAsteroid")));
 
+    // Recursively scan the input folder path into pipeline.assets Asset class instances
     const folder = await ask(text({
         message: "Where are your image and video files located?",
         placeholder: "Relative or absolute path to folder..."
@@ -56,6 +53,11 @@ async function main() {
         }));
         pipeline.setImageLength(parseFloat(durationInput));
     }
+
+    const outputName = await ask(text({ 
+        message: "What should the merged video compilation be named?", 
+        initialValue: new Date().toLocaleString() + ".mp4"
+    }));
 }
 
 // Execute the main command line interface video pipeline with global error catching
