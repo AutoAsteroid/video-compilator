@@ -63,43 +63,49 @@ export default class VideoPipeline {
     /**
      * Recursively appends file paths to this.assets array in the initialized input directory
      * @param {import("./progress").default} progress Progress bar clack spinner class instance
-     * @returns {void} Appends objects representing input file meta data into this.assets
+     * @param {string} [directory=this.inputDirectory] Current directory path being scanned
+     * @returns {Promise<void>} Appends objects representing input file meta data into this.assets
      */
-    async scanFiles(progress) {
-        if (!fs.existsSync(this.inputDirectory)) return; 
+    async scanFiles(progress, directory = this.inputDirectory) {
+        if (!fs.existsSync(directory)) return; 
 
-        const entries = fs.readdirSync(this.inputDirectory);
+        const entries = fs.readdirSync(directory);
 
-        progress.addTotalTasks(entries.length)
+        // Expand total task count dynamically as entries are found
+        progress.addTotalTasks(entries.length);
 
         for (const entry of entries) {
-            const fullPath = path.join(this.inputDirectory, entry);
+            const fullPath = path.join(directory, entry);
             const fileStat = fs.statSync(fullPath);
 
+            // Handle Subdirectories recursively
             if (fileStat.isDirectory()) {
-                await this.scanFiles(progress);
+                await this.scanFiles(progress, fullPath);
+                // Mark the directory entry itself as complete so totalTask math stays balanced
+                progress.completeTask(entry);
                 continue;
             }
 
-            progress.setMessage(entry);
+            // Show current file being probed without incrementing completion count yet
+            progress.setMessage(entry, false);
 
+            // Probe file metadata with FFmpeg
+            const meta = await probeFile(fullPath);
             
-            for (let i = 0; i < 100; i++) {
-                setTimeout(() => progress.updateTask(i), i * 5);
+            // Skip non-media or unreadable files
+            if (!meta || !meta.streams || meta.streams.length === 0) {
+                progress.completeTask(entry);
+                continue;
             }
 
-            await new Promise((resolve) => setTimeout(() => resolve(), 500));
-
-
-            // Skip non media files or files that ffmpeg does not know how to read
-            const meta = await probeFile(fullPath);
-            if (!meta || !meta.streams || meta.streams.length === 0) continue;
-
-            // Make sure that the file is non audio and actually a visual file
+            // Ensure file contains a visual video/image stream
             const videoStream = meta.streams.find((s) => s.codec_type === "video");
-            if (!videoStream) continue;
+            if (!videoStream) {
+                progress.completeTask(entry);
+                continue;
+            }
 
-            const isImage = [ "mjpeg", "png", "bmp", "webp" ].includes(videoStream.codec_name);
+            const isImage = ["mjpeg", "png", "bmp", "webp"].includes(videoStream.codec_name);
             const duration = meta.format?.duration ? parseFloat(meta.format.duration) : 0;
 
             this.assets.push({
@@ -112,6 +118,9 @@ export default class VideoPipeline {
                 width: videoStream.width || 0,
                 height: videoStream.height || 0,
             });
+
+            // Mark file scan as complete (locks in green segment)
+            progress.completeTask(entry);
         }
     }
 
