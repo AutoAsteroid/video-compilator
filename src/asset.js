@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { imageSize } from "image-size";
+import { imageSizeFromFile } from "image-size/fromFile";
 import { fileTypeFromFile } from "file-type";
 import { videoInfo } from "./utils.js";
 
@@ -37,7 +37,7 @@ export default class Asset {
         // Process the file directly without spawning ffprobe if it is an image 
         if (fileType.mime.startsWith("image/")) {
             try {
-                const dimensions = imageSize(this.path);
+                const dimensions = await imageSizeFromFile(this.path);
                 this.width = dimensions.width || 0;
                 this.height = dimensions.height || 0;
                 this.isImage = true;
