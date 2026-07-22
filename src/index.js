@@ -96,7 +96,7 @@ async function main() {
 
     // Rearrange media assets that the final encoded video compilation will reflect
     const sortMethod = await ask(select({
-        message: "How would you like to order the video clips in the final video?",
+        message: "Select an output compilation order:",
         options: [
             { value: "RANDOM", label: "Random Shuffle" },
             { value: "ALPHABETICAL_ASC", label: "Alphabetical (A to Z)" },
@@ -113,6 +113,12 @@ async function main() {
         initialValue: "RANDOM"
     }));
     pipeline.sortFiles(sortMethod);
+
+    // Normalize all the media assets so that we can use -c copy in the final stitch 
+    const normalizeProgress = new ProgressBar("Normalizing");
+    normalizeProgress.start(pipeline.assets.length);
+    await pipeline.normalizeFiles(normalizeProgress);
+    normalizeProgress.stop("Video normalization process complete!");
 }
 
 // Execute the main command line interface video pipeline with global error catching

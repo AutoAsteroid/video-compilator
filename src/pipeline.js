@@ -13,8 +13,8 @@ export default class VideoPipeline {
     constructor(inputDirectory) {
         // Remove any trailing whitespace and single/double quotes
         this.inputDirectory = inputDirectory.trim().replace(/^['"]|['"]$/g, "");
-		this.assets = [];
-		this.tempDirectory = "./normalized";
+        this.assets = [];
+        this.normalizedPaths = [];
     }
 
     /**
@@ -23,8 +23,8 @@ export default class VideoPipeline {
      */
     setResolution(resolution) {
         const [ w, h ] = resolution.split("x");
-		this.targetWidth = parseInt(w, 10);
-		this.targetHeight = parseInt(h, 10);
+        this.targetWidth = parseInt(w, 10);
+        this.targetHeight = parseInt(h, 10);
         this.resolution = resolution;
     }
 
@@ -108,7 +108,7 @@ export default class VideoPipeline {
      * @returns {Promise<void>} Appends objects representing input file meta data into this.assets
      */
     async scanFiles(progress, directory = this.inputDirectory) {
-        if (!fs.existsSync(directory)) return; 
+        if (!fs.existsSync(directory)) return;
 
         // Expand total task count dynamically as new file entries are found
         const entries = fs.readdirSync(directory);
@@ -125,11 +125,11 @@ export default class VideoPipeline {
             }
 
             // Process the current file entry asset metadata
-            progress.setMessage(entry, false);
+            progress.setMessage(fullPath, false);
             const asset = new Asset(fullPath);
             await asset.analyze();
 
-            if (asset.isValidMedia) 
+            if (asset.isValidMedia)
                 this.assets.push(asset);
 
             progress.completeTask(entry);
@@ -160,13 +160,23 @@ export default class VideoPipeline {
         };
         return this.assets.sort(sortMethods[method]);
     }
-    
+
     /**
      * Normalize all assets with the given output parameters so the final stitching can use -c copy
      * @param {import("./progress").default} progress Progress bar clack spinner class instance
      */
-    async normalizeFiles(spinner) {
+    async normalizeFiles(progress) {
+        // Assure that the directory for normalization is empty so there are no ffmpeg conflicts
+        fs.rmSync("normalized", { recursive: true, force: true }); 
+        fs.mkdirSync("normalized");
 
+        const { targetWidth, targetHeight, targetFPS, imageLength } = this;
+
+        for (let i = 0; i < this.assets.length; i++) {
+            const asset = this.assets[i];
+            const outputPath = path.join("normalized", i + ".mp4");
+        }
+        return this.normalizedPaths;
     }
 
     /**

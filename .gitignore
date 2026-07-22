@@ -1,5 +1,6 @@
 # System repository files
 output/*
+normalized/
 !.gitkeep
 node_modules/
 
