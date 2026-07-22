@@ -3,6 +3,7 @@ import pc from "picocolors";
 import ffmpeg from "fluent-ffmpeg";
 import fs from "fs";
 import VideoPipeline from "./pipeline.js";
+import ProgressBar from "./progress.js";
 
 function makeProgressBar(percent, length = 20) {
   const filledLength = Math.round((length * percent) / 100);
@@ -13,7 +14,7 @@ function makeProgressBar(percent, length = 20) {
 }
 
 
-intro(pc.cyan("Welcome to video-compilator! v1.0.0"));
+intro(pc.bold(pc.cyan("Welcome to video-compilator! v1.0.0")));
 
 const folder = await text({
     message: "Where are your video files located?",
@@ -23,9 +24,12 @@ const folder = await text({
 
 const pipeline = new VideoPipeline(folder);
 
-const scanSpinner = spinner();
-scanSpinner.start("Scanning media files...");
-await pipeline.scanFiles(scanSpinner);
+const scanProgress = new ProgressBar("Scanning Files");
+scanProgress.start();
+
+await pipeline.scanFiles(scanProgress);
+
+scanProgress.stop();
 
 if (pipeline.assets.length === 0) {
     scanSpinner.stop("No matching video files found!");

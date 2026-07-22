@@ -3,7 +3,7 @@ import path from "path";
 import ffmpeg from "fluent-ffmpeg";
 import pc from "picocolors";
 import { fileTypeFromFile } from "file-type";
-import { fisherYatesShuffle, probeFile } from "./utils";
+import { fisherYatesShuffle, probeFile } from "./utils.js";
 
 export default class VideoPipeline {
     /**
@@ -62,22 +62,34 @@ export default class VideoPipeline {
 
     /**
      * Recursively appends file paths to this.assets array in the initialized input directory
-     * @param {import("@clack/prompts").spinner} spinner Clack spinner to show progress over time
+     * @param {import("./progress").default} progress Progress bar clack spinner class instance
      * @returns {void} Appends objects representing input file meta data into this.assets
      */
-    async scanFiles(spinner) {
+    async scanFiles(progress) {
         if (!fs.existsSync(this.inputDirectory)) return; 
 
-        for (const entry of fs.readdirSync(this.inputDirectory)) {
+        const entries = fs.readdirSync(this.inputDirectory);
+
+        progress.addTotalTasks(entries.length)
+
+        for (const entry of entries) {
             const fullPath = path.join(this.inputDirectory, entry);
             const fileStat = fs.statSync(fullPath);
 
             if (fileStat.isDirectory()) {
-                await this.scanFiles(spinner);
+                await this.scanFiles(progress);
                 continue;
             }
 
-            spinner.message(`Scanning: ${entry}`);
+            progress.setMessage(entry);
+
+            
+            for (let i = 0; i < 100; i++) {
+                setTimeout(() => progress.updateTask(i), i * 5);
+            }
+
+            await new Promise((resolve) => setTimeout(() => resolve(), 500));
+
 
             // Skip non media files or files that ffmpeg does not know how to read
             const meta = await probeFile(fullPath);
@@ -110,9 +122,7 @@ export default class VideoPipeline {
      */
     sortFiles(method) {
         // Randomly shuffle this.assets in place and return this.assets
-        if (method === "RANDOM") {
-            return fisherYatesShuffle(this.assets);
-        }
+        if (method === "RANDOM") return fisherYatesShuffle(this.assets);
 
         // Hard coded sort methods to join the output video compilation by
         const sortMethods = {
@@ -132,7 +142,7 @@ export default class VideoPipeline {
     
     /**
      * Normalize all assets with the given output parameters so the final stitching can use -c copy
-     * @param {import("@clack/prompts").spinner} spinner Clack spinner to show progress over time
+     * @param {import("./progress").default} progress Progress bar clack spinner class instance
      */
     async normalizeFiles(spinner) {
 
@@ -142,7 +152,7 @@ export default class VideoPipeline {
      * Stitches the normalized video files together into a final output video using -c copy flag
      * ffmpeg -c copy copies the bits directly and does not need to re-encode the video if used
      * @param {string} outputName The output video file name to place in the output folder
-     * @param {import("@clack/prompts").spinner} spinner Clack spinner to show progress over time
+     * @param {import("./progress").default} progress Progress bar clack spinner class instance
      */
     async stitchFiles(outputName, spinner) {
 
