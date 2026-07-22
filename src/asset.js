@@ -20,6 +20,7 @@ export default class Asset {
         this.duration = 0;
         this.width = 0;
         this.height = 0;
+        this.extension = "";
         this.isValidMedia = false;
     }
 
@@ -60,6 +61,7 @@ export default class Asset {
         this.size = stat.size;
         this.birthTime = stat.birthtimeMs;
         this.resolution = this.width + "x" + this.height;
+        this.extension = fileType.ext;
 
         // This same instance but now with the populated metadata
         return this;

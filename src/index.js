@@ -92,7 +92,27 @@ async function main() {
     }));
 
     pipeline.setResolution(targetResolution);
-    pipeline.setFrameRate(targetFps)
+    pipeline.setFrameRate(targetFps);
+
+    // Rearrange media assets that the final encoded video compilation will reflect
+    const sortMethod = await ask(select({
+        message: "How would you like to order the video clips in the final video?",
+        options: [
+            { value: "RANDOM", label: "Random Shuffle" },
+            { value: "ALPHABETICAL_ASC", label: "Alphabetical (A to Z)" },
+            { value: "ALPHABETICAL_DESC", label: "Alphabetical (Z to A)" },
+            { value: "DATE_ASC", label: "Date Created (Oldest first)" },
+            { value: "DATE_DESC", label: "Date Created (Newest first)" },
+            { value: "DURATION_ASC", label: "Duration (Shortest first)" },
+            { value: "DURATION_DESC", label: "Duration (Longest first)" },
+            { value: "SIZE_ASC", label: "File Size (Smallest first)" },
+            { value: "SIZE_DESC", label: "File Size (Largest first)" },
+            { value: "TYPE_ASC", label: "File Extension (A to Z)" },
+            { value: "TYPE_DESC", label: "File Extension (Z to A)" },
+        ],
+        initialValue: "RANDOM"
+    }));
+    pipeline.sortFiles(sortMethod);
 }
 
 // Execute the main command line interface video pipeline with global error catching

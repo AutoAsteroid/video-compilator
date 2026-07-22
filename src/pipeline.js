@@ -155,8 +155,8 @@ export default class VideoPipeline {
             DURATION_DESC: (a, b) => b.duration - a.duration,
             SIZE_ASC: (a, b) => a.size - b.size,
             SIZE_DESC: (a, b) => b.size - a.size,
-            TYPE_ASC: (a, b) => a.extension - b.extension,
-            TYPE_DESC: (a, b) => b.extension - a.extension,
+            TYPE_ASC: (a, b) => a.extension.localeCompare(b.extension),
+            TYPE_DESC: (a, b) => b.extension.localeCompare(a.extension),
         };
         return this.assets.sort(sortMethods[method]);
     }
