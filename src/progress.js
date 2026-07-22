@@ -148,7 +148,7 @@ export default class ProgressBar {
         const progressBar = `[${greenBlock}${cyanBlock}${grayBlock}]`;
         const counter = pc.dim(`(${this.completedTasks}/${this.totalTasks})`);
         const eta = pc.yellow(`ETA: ${this.eta}`);
-        const detail = this.detail ? `\n   ${pc.dim(this.detail)}` : "";
+        const detail = this.detail ? ` ${pc.dim(this.detail)}` : "";
 
         return `${pc.bold(this.title)} ${progressBar} ${overallPercent}% ${counter} ${eta}${detail}`;
     }

@@ -1,65 +1,40 @@
-import { intro, select, text, spinner, outro } from "@clack/prompts";
+import { intro, text, outro, isCancel } from "@clack/prompts";
 import pc from "picocolors";
-import ffmpeg from "fluent-ffmpeg";
-import fs from "fs";
 import VideoPipeline from "./pipeline.js";
 import ProgressBar from "./progress.js";
 
-function makeProgressBar(percent, length = 20) {
-  const filledLength = Math.round((length * percent) / 100);
-  const emptyLength = length - filledLength;
-  const filled = '█'.repeat(filledLength);
-  const empty = '░'.repeat(emptyLength);
-  return `[${pc.cyan(filled)}${pc.gray(empty)}] ${percent}%`;
+/**
+ * Helper function called to safely stop the command line interface and video pipeline
+ */
+function cancel(message) {
+    outro(pc.red(message));
+    process.exit();
 }
 
+/**
+ * ffmpeg CLI wrapper to join video and image files into a single video compilation.
+ * Supports smart export defaults, join ordering, progress bars, and normalization.
+ */
 
-intro(pc.bold(pc.cyan("Welcome to video-compilator! v1.0.0")));
+async function main() {
+    intro(pc.bold(pc.cyan("Welcome to Video-Compilator! @ github.com/AutoAsteroid")));
 
-const folder = await text({
-    message: "Where are your video files located?",
-    placeholder: "./videos",
-    initialValue: "./videos"
-});
+    const folder = await text({
+        message: "Where are your image and video files located?",
+        placeholder: "Relative or absolute path to folder..."
+    });
+    if (isCancel(folder)) return cancel("Operation cancelled. Exiting.");
 
-const pipeline = new VideoPipeline(folder);
+    const pipeline = new VideoPipeline(folder);
+    const scanProgress = new ProgressBar("Scanning");
 
-const scanProgress = new ProgressBar("Scanning Files");
-scanProgress.start();
+    scanProgress.start();
+    await pipeline.scanFiles(scanProgress);
+    scanProgress.stop(`Successfully loaded ${pipeline.assets.length} media asset(s).`);
 
-await pipeline.scanFiles(scanProgress);
-
-scanProgress.stop();
-
-if (pipeline.assets.length === 0) {
-    outro(pc.red("Please make sure you passed a valid file path."));
+    if (pipeline.assets.length === 0)
+        return cancel("Could not find any media files at the provided path.");
 }
 
-// const outputName = await text({
-//     message: "What should the merged file be named?",
-//     initialValue: "compilation.mp4"
-// });
-
-// const s = spinner();
-// s.start("Stitching your videos together...");
-
-// const merger = ffmpeg();
-
-// files.forEach(file => {
-//     merger.input(`${folder}/${file}`);
-// });
-
-// merger
-//     .on("progress", progress => {
-//         const percentage = Math.min(100, Math.max(0, Math.round(progress.percent || 0)));
-//         s.message(`Compiling: ${makeProgressBar(percentage)}`);
-//     })
-//     .on("end", () => {
-//         s.stop('Video compilation complete!');
-//         console.log(pc.green("\nVideo compilation completed successfully!"));
-//     })
-//     .on("error", err => {
-//         s.stop('Failed');
-//         console.error(pc.red(`\nError processing video: ${err.message}`));
-//     })
-//     .mergeToFile(outputName, "./temp_dir");
+// Execute the main command line interface video pipeline with global error catching
+main().catch(({ message }) => cancel(message));
