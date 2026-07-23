@@ -194,19 +194,17 @@ export default class VideoPipeline {
                 .save(outputPath)
             );
 
-            // Both images and silent videos need the same visual filter and silent audio source
-            if (!asset.hasAudio) {
-                // Loop image frames into a video for the image duration provided by the user
-                if (asset.isImage) ffmpegCMD.inputOptions(["-loop 1", `-t ${duration}`]);
+            // Loop image frames into a video for the provided image duration given by the user
+            if (asset.isImage) ffmpegCMD.inputOptions(["-loop 1", `-t ${duration}`]);
 
+            // Both images and silent videos need the same visual filter and silent audio source
+            if (!asset.hasAudio)
                 ffmpegCMD.complexFilter(`[0:v]${vf}[v]; anullsrc=r=44100:cl=stereo:d=${duration}[a]`);
-                ffmpegCMD.outputOptions(["-map [v]", "-map [a]", `-t ${duration}`]);
-            } else {
-                ffmpegCMD.complexFilter(`[0:v]${vf}[v]`);
-                ffmpegCMD.outputOptions(["-map [v]", "-map 0:a:0", `-t ${duration}`]);
-            }
+            else ffmpegCMD.complexFilter(`[0:v]${vf}[v]`);
 
             // Strict output options to guarantee the same stream specifications for final stitching
+            ffmpegCMD.outputOptions(["-map [v]", `-t ${duration}`]);
+            ffmpegCMD.outputOptions(!asset.hasAudio ? "-map [a]" : "-map 0:a:0");
             ffmpegCMD.outputOptions([ 
                 "-c:v libx264", "-pix_fmt yuv420p", "-profile:v main", "-level:v 3.1",
                 "-c:a aac", "-b:a 128k", "-ar 44100", "-ac 2", "-sn", "-nostdin" 
