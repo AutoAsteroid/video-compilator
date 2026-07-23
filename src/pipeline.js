@@ -115,7 +115,7 @@ export default class VideoPipeline {
         progress.addTotalTasks(entries.length);
 
         for (const entry of entries) {
-            const fullPath = path.join(directory, entry);
+            const fullPath = path.resolve(directory, entry);
             const fileStat = fs.statSync(fullPath);
 
             // Handle any sub folders recursively depth first
@@ -132,7 +132,7 @@ export default class VideoPipeline {
             if (asset.isValidMedia)
                 this.assets.push(asset);
 
-            progress.completeTask(entry);
+            progress.completeTask(fullPath);
         }
     }
 
@@ -164,8 +164,9 @@ export default class VideoPipeline {
     /**
      * Normalize all assets with the given output parameters so the final stitching can use -c copy
      * @param {import("./progress").default} progress Progress bar clack spinner wrapper class instance
+     * @param {string} encoder Type of encoder to use, e.g.: libx264, libx265, h264_nvenc, hevc_nvenc
      */
-    async normalizeFiles(progress) {
+    async normalizeFiles(progress, encoder = "libx264") {
         // Assure that the directory for normalization is empty so there are no ffmpeg conflicts
         fs.rmSync("normalized", { recursive: true, force: true }); 
         fs.mkdirSync("normalized");
@@ -187,6 +188,7 @@ export default class VideoPipeline {
             // Initialize base ffmpeg normalization promise before adding our parametered outputs
             const ffmpegCMD = ffmpeg(asset.path);
             const normalize = new Promise((resolve, reject) => ffmpegCMD
+                .videoCodec(encoder)
                 .outputOptions([ "-xerror" ])
                 .on("start", () => progress.updateTask(0, asset.path))
                 .on("end", resolve)
@@ -207,7 +209,7 @@ export default class VideoPipeline {
             ffmpegCMD.outputOptions(["-map [v]", `-t ${duration}`]);
             ffmpegCMD.outputOptions(!asset.hasAudio ? "-map [a]" : "-map 0:a:0");
             ffmpegCMD.outputOptions([ 
-                "-c:v libx264", "-pix_fmt yuv420p", "-profile:v main", "-level:v 3.1",
+                "-pix_fmt yuv420p", "-profile:v main", "-level:v 3.1",
                 "-c:a aac", "-b:a 128k", "-ar 44100", "-ac 2", "-sn", "-nostdin" 
             ]);
 
