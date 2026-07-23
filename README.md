@@ -37,7 +37,7 @@ Clone the repository into your current directory with terminal:
 git clone https://github.com/AutoAsteroid/video-compilator.git
 ```
 
-Go to the directory and install the depencies:
+Go to the directory and install the dependencies:
 
 ```bash
 cd video-compilator
@@ -68,7 +68,7 @@ When you run `npm start`, Video Compilator guides you through the process step-b
 | **6. Sort Order** | *Select an output compilation order:* | Choose how clip sequences are ordered. |
 | **7. Encoder** | *Select a video encoder to normalize with:* | Select CPU or GPU-accelerated encoding. |
 
-Your images and videos will then be normalized into `./normalized/` with the parameters you chose and finally saved into `./output/`. 
+Your images and videos will then be normalized into `./normalized/` with the parameters you chose and joined together into one video in `./output/`. 
 
 ## License
 
