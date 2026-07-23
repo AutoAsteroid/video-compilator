@@ -103,7 +103,7 @@ export default class VideoPipeline {
 
     /**
      * Recursively appends file paths to this.assets array in the initialized input directory
-     * @param {import("./progress").default} progress Progress bar clack spinner class instance
+     * @param {import("./progress").default} progress Progress bar clack spinner wrapper class instance
      * @param {string} [directory=this.inputDirectory] Current directory path being scanned
      * @returns {Promise<void>} Appends objects representing input file meta data into this.assets
      */
@@ -163,19 +163,44 @@ export default class VideoPipeline {
 
     /**
      * Normalize all assets with the given output parameters so the final stitching can use -c copy
-     * @param {import("./progress").default} progress Progress bar clack spinner class instance
+     * @param {import("./progress").default} progress Progress bar clack spinner wrapper class instance
      */
     async normalizeFiles(progress) {
         // Assure that the directory for normalization is empty so there are no ffmpeg conflicts
         fs.rmSync("normalized", { recursive: true, force: true }); 
         fs.mkdirSync("normalized");
-
+ 
         const { targetWidth, targetHeight, targetFPS, imageLength } = this;
 
         for (let i = 0; i < this.assets.length; i++) {
             const asset = this.assets[i];
             const outputPath = path.join("normalized", i + ".mp4");
+            const ffmpegCMD = ffmpeg(asset.path);
+
+            // Initialize base ffmpeg normalization promise before adding our parametered outputs
+            const normalize = new Promise((resolve, reject) => ffmpegCMD
+                .outputOptions("-loglevel error")
+                .on("end", resolve)
+                .on("error", reject)
+                .on("progress", ({ percent }) => progress.updateTask(percent, asset.path))
+                .save(outputPath)
+            );
+
+            // If the asset already matches our target export we just skip re encoding entirely
+            const isAlreadyNormalized = 
+                !asset.isImage && 
+                asset.hasAudio &&
+                asset.width === targetWidth &&
+                asset.height === targetHeight &&
+                asset.rawFPS === targetFPS;
+
+            if (isAlreadyNormalized) {
+                ffmpegCMD.outputOptions(["-c copy", "-nostdin"]);
+            }
+
+            await normalize;
         }
+        
         return this.normalizedPaths;
     }
 
@@ -183,7 +208,7 @@ export default class VideoPipeline {
      * Stitches the normalized video files together into a final output video using -c copy flag
      * ffmpeg -c copy copies the bits directly and does not need to re-encode the video if used
      * @param {string} outputName The output video file name to place in the output folder
-     * @param {import("./progress").default} progress Progress bar clack spinner class instance
+     * @param {import("./progress").default} progress Progress bar clack spinner wrapper class instance
      */
     async stitchFiles(outputName, spinner) {
 
