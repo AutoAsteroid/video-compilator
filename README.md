@@ -6,17 +6,19 @@ An interactive CLI wrapper designed to recursively scan directories, normalize m
 
 ## 💡 Example Use Cases
 
-* **Personal Media Archiving & Phone Exports:** Seamlessly stitch thousands of loose, short memory clips and photos (e.g., Snapchat or Google Photos exports) into a continuous, chronological playback file.
-* **Content Aggregation & Social Dumps:** Automate the process of converting hundreds of raw, short-form vertical or horizontal clips into standardized long-form video compilations for platforms like YouTube or Vimeo.
-* **Dashcam & Security Footage Consolidation:** Merge fragmented, multi-part security or dashcam recordings into a single continuous timeline for easier review and archiving.
-* **Personal Media Archiving:** Easily transform hundreds of trip photos and holiday clips into a seamless family video file for your TV or home server.
+| Use Case | Description |
+|----------|-------------|
+| **Personal Media Archiving & Phone Exports** | Seamlessly stitch thousands of loose, short memory clips and photos (e.g., Snapchat or Google Photos exports) into a continuous, chronological playback file. |
+| **Content Aggregation & Social Dumps** | Automate the process of converting hundreds of raw, short-form vertical or horizontal clips into standardized long-form video compilations for platforms like YouTube or Vimeo. |
+| **Dashcam & Security Footage Consolidation** | Merge fragmented, multi-part security or dashcam recordings into a single continuous timeline for easier review and archiving. |
+| **Family & Travel Media Archiving** | Easily transform hundreds of trip photos and holiday clips into a seamless family video file for your TV or home server. |
 
 ---
 
 ## 🎬 Key Features
 
 | Requirement | Version |
-|-------------| -------- |
+|-------------|---------|
 | **Smart Asset Scanning** | Recursively loads videos and images from any provided target directory. |
 | **Smart Resolution & FPS Detection** | Automatically detects the most common resolution and frame rate among your media assets to suggest optimal defaults. |
 | **Export Ordering** | Compilate by creation date, file size, duration, name, type, or randomization. | 
