@@ -224,8 +224,29 @@ export default class VideoPipeline {
      * ffmpeg -c copy copies the bits directly and does not need to re-encode the video if used
      * @param {string} outputName The output video file name to place in the output folder
      * @param {import("./progress").default} progress Progress bar clack spinner wrapper class instance
+     * @returns {Promise<string|Error>} Output path the video is located at once over 
      */
-    async stitchFiles(outputName, spinner) {
+    async stitchFiles(outputName, progress) {
+        if (!fs.existsSync("output")) fs.mkdirSync("output");
 
+        const outputPath = path.join("output", outputName);
+        const listFilePath = path.join("normalized", "concat.txt");
+
+        // Normalized paths are absolute paths, format them for FFmpeg's demuxer format
+        const manifestContent = this.normalizedPaths
+            .map((path) => `file '${path.replace(/\\/g, "/")}'`)
+            .join("\n");
+            
+        fs.writeFileSync(listFilePath, manifestContent, "utf8");
+
+        // Combine the normalized videos using -c copy to copy video bits directly  
+        return new Promise((resolve, reject) => ffmpeg(listFilePath)
+            .inputOptions([ "-f concat", "-safe 0" ])
+            .outputOptions([ "-c copy", "-movflags +faststart" ])
+            .on("progress", ({ percent }) => progress.updateTask(percent))
+            .on("end", () => resolve(outputPath))
+            .on("error", reject)
+            .save(outputPath)
+        );
     }
 }
