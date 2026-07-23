@@ -180,6 +180,7 @@ export default class VideoPipeline {
         ].join(",");
 
         for (let i = 0; i < this.assets.length; i++) {
+
             const asset = this.assets[i];
             const outputPath = path.join("normalized", i + ".mp4");
             const duration = asset.isImage ? imageLength : asset.duration;
@@ -195,9 +196,9 @@ export default class VideoPipeline {
             );
 
             // If the asset already matches our target export we just skip re encoding entirely
-            if (asset.isVideo && asset.hasAudio && asset.rawFPS === targetFPS && 
-                asset.width === targetWidth && asset.height === targetHeight) 
-                ffmpegCMD.outputOptions(["-c copy"]);
+            // if (asset.isVideo && asset.hasAudio && asset.rawFPS === targetFPS && 
+            //     asset.width === targetWidth && asset.height === targetHeight)
+            //     ffmpegCMD.outputOptions(["-c copy"]);
 
             // Loop image frames into a video for the image duration provided by the user
             if (asset.isImage) 
@@ -212,7 +213,15 @@ export default class VideoPipeline {
                 ffmpegCMD.outputOptions(["-map [v]", "-map 0:a:0", `-t ${duration}`]);
             }
 
+            // Strict output options to guarantee the same stream specifications for final stitching
+            ffmpegCMD.outputOptions([ 
+                "-c:v libx264", "-pix_fmt yuv420p", "-profile:v main", "-level:v 3.1",
+                "-c:a aac", "-b:a 128k", "-ar 44100", "-ac 2", "-sn", "-nostdin" 
+            ]);
+
             await normalize;
+            this.normalizedPaths.push(outputPath);
+            progress.completeTask(asset.path);
         }
         
         return this.normalizedPaths;
