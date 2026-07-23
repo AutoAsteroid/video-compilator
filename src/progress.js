@@ -127,24 +127,23 @@ export default class ProgressBar {
     buildMessage() {
         // Multi progress bar when we have total tasks to be able to represent progress
         const overallRatio = this.getOverallRatio();
-        const totalFilled = Math.round(overallRatio * this.barLength);
-        const completed = Math.floor((this.completedTasks / this.totalTasks) * this.barLength);
-        const active = Math.max(0, totalFilled - completed);
-        const empty = Math.max(0, this.barLength - totalFilled);
+        const filled = Math.round(overallRatio * this.barLength);
+        const empty = Math.max(0, this.barLength - filled);
 
-        // Continuous color bar: green = complete, cyan = active, grey = incomplete
-        const greenBlock = pc.green("█".repeat(completed));
-        const cyanBlock = pc.cyan("█".repeat(active));
+        // Continuous color bar: green = complete, grey = incomplete
+        const greenBlock = pc.green("█".repeat(filled));
         const grayBlock = pc.gray("░".repeat(empty));
 
-        // If totalTasks = 0, the output bar will just be a non progressing bar
-        const progressBar = `[${greenBlock}${cyanBlock}${grayBlock}]`;
+        const progressBar = `[${greenBlock}${grayBlock}]`;
         const percent = pc.green(Math.round(overallRatio * 100) + "%");
         const counter = pc.green(`(${this.completedTasks}/${this.totalTasks})`);
         const eta = pc.yellow(`ETA: ${this.eta}`);
-        const detail = this.detail ? `\n   ${pc.dim(this.detail)}`: "";
+        
+        // Render the active item's individual progress next to the path in cyan
+        const activeProgress = pc.cyan(`[${this.currentTaskProgress.toFixed(2)}%]`);
+        const detail = this.detail ? `\n   ${pc.dim(this.detail)}` : "";
 
-        return `${this.title} ${progressBar} ${percent} ${counter} ${eta}${detail}`;
+        return `${this.title} ${progressBar} ${percent} ${counter} ${eta} ${activeProgress} ${detail}`;
     }
 
     /**
