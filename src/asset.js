@@ -1,5 +1,5 @@
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 import { imageSizeFromFile } from "image-size/fromFile";
 import { fileTypeFromFile } from "file-type";
 import { videoInfo } from "./utils.js";
