@@ -1,7 +1,6 @@
 # System repository files
-output/*
 normalized/
-!.gitkeep
+output/
 node_modules/
 
 # Junk MacOS files
