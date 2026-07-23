@@ -114,10 +114,26 @@ async function main() {
     }));
     pipeline.sortFiles(sortMethod);
 
+    // Detect if the user has a GPU if they want to use that instead of CPU encoding
+    const chosenEncoder = await ask(select({
+        message: "Select a video encoder to normalize with:",
+        options: [
+            { value: "libx264", label: "CPU H.264 (libx264)" },
+            { value: "libx265", label: "CPU H.265 (libx265)" },
+            { value: "h264_nvenc", label: "NVIDIA NVENC H.264 (GPU)" },
+            { value: "hevc_nvenc", label: "NVIDIA NVENC H.265 (GPU)" },
+            { value: "h264_videotoolbox", label: "Apple VideoToolbox H.264 (GPU)" },
+            { value: "hevc_videotoolbox", label: "Apple VideoToolbox H.265 (GPU)" },
+            { value: "h264_qsv", label: "Intel QuickSync H.264 (GPU)" },
+            { value: "h264_amf", label: "AMD AMF H.264 (GPU)" }
+        ],
+        initialValue: "libx264"
+    }));
+
     // Normalize all the media assets so that we can use -c copy in the final stitch 
     const normalizeProgress = new ProgressBar("Normalizing");
     normalizeProgress.start(pipeline.assets.length);
-    await pipeline.normalizeFiles(normalizeProgress);
+    await pipeline.normalizeFiles(normalizeProgress, chosenEncoder);
     normalizeProgress.stop("Video normalization process complete!");
 
     // Combine the final normalized videos together using -c copy ffmpeg flag!
