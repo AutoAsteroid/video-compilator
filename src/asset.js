@@ -10,7 +10,7 @@ export default class Asset {
      * @param {string} filePath The file path to the asset file assuming it exists
      */
     constructor(filePath) {
-        this.path = filePath;
+        this.path = path.resolve(filePath);
         this.name = path.basename(filePath);
 
         // Default file metadata that will be filled in Asset.analyze()

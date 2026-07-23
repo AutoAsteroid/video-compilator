@@ -119,6 +119,15 @@ async function main() {
     normalizeProgress.start(pipeline.assets.length);
     await pipeline.normalizeFiles(normalizeProgress);
     normalizeProgress.stop("Video normalization process complete!");
+
+    // Combine the final normalized videos together using -c copy ffmpeg flag!
+    const compilateProgress = new ProgressBar("Compilating");
+    compilateProgress.start();
+    const output = await pipeline.stitchFiles(outputName, compilateProgress)
+    compilateProgress.stop(`Compilated ${pipeline.assets.length} media asset(s).`);
+
+    // Print the absolute path to the compilated video file into terminal
+    outro(pc.bold(pc.cyan(output)));
 }
 
 // Execute the main command line interface video pipeline with global error catching

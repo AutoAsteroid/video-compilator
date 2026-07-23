@@ -212,7 +212,7 @@ export default class VideoPipeline {
             ]);
 
             await normalize;
-            this.normalizedPaths.push(outputPath);
+            this.normalizedPaths.push(path.resolve(outputPath));
             progress.completeTask(asset.path);
         }
         
@@ -229,14 +229,15 @@ export default class VideoPipeline {
     async stitchFiles(outputName, progress) {
         if (!fs.existsSync("output")) fs.mkdirSync("output");
 
-        const outputPath = path.join("output", outputName);
-        const listFilePath = path.join("normalized", "concat.txt");
+        const safeOutputName = outputName.replace(/[/\\?%*:|"<>]/g, "-");
+        const outputPath = path.resolve("output", safeOutputName);
+        const listFilePath = path.resolve("normalized", "concat.txt");
 
         // Normalized paths are absolute paths, format them for FFmpeg's demuxer format
         const manifestContent = this.normalizedPaths
-            .map((path) => `file '${path.replace(/\\/g, "/")}'`)
+            .map((file) => `file '${file.replace(/\\/g, "/")}'`)
             .join("\n");
-            
+
         fs.writeFileSync(listFilePath, manifestContent, "utf8");
 
         // Combine the normalized videos using -c copy to copy video bits directly  
