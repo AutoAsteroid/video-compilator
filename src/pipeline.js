@@ -180,7 +180,6 @@ export default class VideoPipeline {
         ].join(",");
 
         for (let i = 0; i < this.assets.length; i++) {
-
             const asset = this.assets[i];
             const outputPath = path.join("normalized", i + ".mp4");
             const duration = asset.isImage ? imageLength : asset.duration;
@@ -195,17 +194,11 @@ export default class VideoPipeline {
                 .save(outputPath)
             );
 
-            // If the asset already matches our target export we just skip re encoding entirely
-            // if (asset.isVideo && asset.hasAudio && asset.rawFPS === targetFPS && 
-            //     asset.width === targetWidth && asset.height === targetHeight)
-            //     ffmpegCMD.outputOptions(["-c copy"]);
-
-            // Loop image frames into a video for the image duration provided by the user
-            if (asset.isImage) 
-                ffmpegCMD.inputOptions(["-loop 1", `-t ${duration}`]);
-
             // Both images and silent videos need the same visual filter and silent audio source
-            if (asset.isImage || !asset.hasAudio) {
+            if (!asset.hasAudio) {
+                // Loop image frames into a video for the image duration provided by the user
+                if (asset.isImage) ffmpegCMD.inputOptions(["-loop 1", `-t ${duration}`]);
+
                 ffmpegCMD.complexFilter(`[0:v]${vf}[v]; anullsrc=r=44100:cl=stereo:d=${duration}[a]`);
                 ffmpegCMD.outputOptions(["-map [v]", "-map [a]", `-t ${duration}`]);
             } else {
