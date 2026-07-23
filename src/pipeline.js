@@ -172,6 +172,13 @@ export default class VideoPipeline {
  
         const { targetWidth, targetHeight, targetFPS, imageLength } = this;
 
+        // Video frame normalization to match the target resolution and FPS with black box padding
+        const vf = [
+            `scale=${targetWidth}:${targetHeight}:force_original_aspect_ratio=decrease`,
+            `pad=${targetWidth}:${targetHeight}:(${targetWidth}-iw)/2:(${targetHeight}-ih)/2:black`,
+            `fps=${targetFPS}`
+        ].join(",");
+
         for (let i = 0; i < this.assets.length; i++) {
             const asset = this.assets[i];
             const outputPath = path.join("normalized", i + ".mp4");
