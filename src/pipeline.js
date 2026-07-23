@@ -175,9 +175,10 @@ export default class VideoPipeline {
         for (let i = 0; i < this.assets.length; i++) {
             const asset = this.assets[i];
             const outputPath = path.join("normalized", i + ".mp4");
-            const ffmpegCMD = ffmpeg(asset.path);
+            const duration = asset.isImage ? imageLength : asset.duration;
 
             // Initialize base ffmpeg normalization promise before adding our parametered outputs
+            const ffmpegCMD = ffmpeg(asset.path);
             const normalize = new Promise((resolve, reject) => ffmpegCMD
                 .outputOptions("-loglevel error")
                 .on("end", resolve)
@@ -187,15 +188,21 @@ export default class VideoPipeline {
             );
 
             // If the asset already matches our target export we just skip re encoding entirely
-            const isAlreadyNormalized = 
-                !asset.isImage && 
-                asset.hasAudio &&
-                asset.width === targetWidth &&
-                asset.height === targetHeight &&
-                asset.rawFPS === targetFPS;
+            if (asset.isVideo && asset.hasAudio && asset.rawFPS === targetFPS && 
+                asset.width === targetWidth && asset.height === targetHeight) 
+                ffmpegCMD.outputOptions(["-c copy"]);
 
-            if (isAlreadyNormalized) {
-                ffmpegCMD.outputOptions(["-c copy", "-nostdin"]);
+            // Loop image frames into a video for the image duration provided by the user
+            if (asset.isImage) 
+                ffmpegCMD.inputOptions(["-loop 1", `-t ${duration}`]);
+
+            // Both images and silent videos need the same visual filter and silent audio source
+            if (asset.isImage || !asset.hasAudio) {
+                ffmpegCMD.complexFilter(`[0:v]${vf}[v]; anullsrc=r=44100:cl=stereo:d=${duration}[a]`);
+                ffmpegCMD.outputOptions(["-map [v]", "-map [a]", `-t ${duration}`]);
+            } else {
+                ffmpegCMD.complexFilter(`[0:v]${vf}[v]`);
+                ffmpegCMD.outputOptions(["-map [v]", "-map 0:a:0", `-t ${duration}`]);
             }
 
             await normalize;
