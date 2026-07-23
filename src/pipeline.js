@@ -187,7 +187,7 @@ export default class VideoPipeline {
             // Initialize base ffmpeg normalization promise before adding our parametered outputs
             const ffmpegCMD = ffmpeg(asset.path);
             const normalize = new Promise((resolve, reject) => ffmpegCMD
-                .outputOptions("-loglevel error")
+                .on("start", () => progress.updateTask(0, asset.path))
                 .on("end", resolve)
                 .on("error", reject)
                 .on("progress", ({ percent }) => progress.updateTask(percent, asset.path))

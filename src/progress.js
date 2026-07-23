@@ -66,6 +66,7 @@ export default class ProgressBar {
      * @param {string} [detail=""] Message detail to place at the end of the progress bar
      */
     updateTask(percent = 0, detail = "") {
+        if (isNaN(percent)) percent = 0;
         if (detail) this.detail = detail;
 
         this.currentTaskProgress = Math.min(100, Math.max(0, percent));
