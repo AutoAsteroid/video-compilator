@@ -182,7 +182,7 @@ export default class VideoPipeline {
 
         for (let i = 0; i < this.assets.length; i++) {
             const asset = this.assets[i];
-            const outputPath = path.join("normalized", i + ".mp4");
+            const outputPath = path.resolve("normalized", i + ".mp4");
             const duration = asset.isImage ? imageLength : asset.duration;
 
             // Initialize base ffmpeg normalization promise before adding our parametered outputs
@@ -208,13 +208,12 @@ export default class VideoPipeline {
             // Strict output options to guarantee the same stream specifications for final stitching
             ffmpegCMD.outputOptions(["-map [v]", `-t ${duration}`]);
             ffmpegCMD.outputOptions(!asset.hasAudio ? "-map [a]" : "-map 0:a:0");
-            ffmpegCMD.outputOptions([ 
-                "-pix_fmt yuv420p", "-profile:v main", "-level:v 3.1",
-                "-c:a aac", "-b:a 128k", "-ar 44100", "-ac 2", "-sn", "-nostdin" 
-            ]);
+
+            ffmpegCMD.audioCodec("aac").audioBitrate("128k").audioFrequency(44100).audioChannels(2);
+            ffmpegCMD.outputOptions([ "-pix_fmt yuv420p", "-sn", "-nostdin" ]);
 
             await normalize;
-            this.normalizedPaths.push(path.resolve(outputPath));
+            this.normalizedPaths.push(outputPath);
             progress.completeTask(asset.path);
         }
         
