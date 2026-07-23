@@ -122,4 +122,4 @@ async function main() {
 }
 
 // Execute the main command line interface video pipeline with global error catching
-main().catch(({ message }) => cancel(message));
+main().catch((error) => cancel(error.message || error));
