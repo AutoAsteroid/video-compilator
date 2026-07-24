@@ -2,6 +2,8 @@
 
 An interactive CLI wrapper designed to recursively scan directories, normalize mixed media formats, and stitch videos and images into a single, cohesive compilation. Built on Node.js and FFmpeg, it automates aspect ratio scaling, frame rate matching, and hardware-accelerated encoding with zero manual video editing required.
 
+<video src="https://github.com/user-attachments/assets/602bcc3b-030c-44e3-968c-4971085f7438"></video>
+
 ---
 
 ## 💡 Example Use Cases
